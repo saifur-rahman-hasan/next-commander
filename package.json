@@ -2,12 +2,14 @@
   "name": "next-commander",
   "version": "1.0.2",
   "description": "Nextjs 14 Compatable project commander tool for boosting your development work process.",
-  "main": "index.js",
+  "main": "dist/bin/index.js",
   "type": "module",
-  "bin": "index.js",
+  "bin": {
+    "next-commander": "./dist/bin/index.js"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build --outDir=/dist/bin",
     "preview": "vite preview"
   },
   "keywords": [
@@ -22,6 +24,8 @@
     "inquirer": "^9.1.5"
   },
   "devDependencies": {
+    "@babel/cli": "^7.23.4",
+    "@babel/core": "^7.23.7",
     "@types/inquirer": "^9.0.3",
     "typescript": "^5.2.2",
     "vite": "^5.0.11"
