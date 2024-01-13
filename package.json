@@ -1,6 +1,6 @@
 {
   "name": "next-commander",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Nextjs 14 Compatable project commander tool for boosting your development work process.",
   "main": "dist/bin/index.js",
   "type": "module",
