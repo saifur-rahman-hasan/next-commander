@@ -6,9 +6,9 @@
   "type": "module",
   "bin": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js",
-    "build": "tsc"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "keywords": [
     "next-commander",
@@ -22,6 +22,8 @@
     "inquirer": "^9.1.5"
   },
   "devDependencies": {
-    "@types/inquirer": "^9.0.3"
+    "@types/inquirer": "^9.0.3",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.11"
   }
 }
