@@ -41,9 +41,6 @@ const commandChoiceOptions = Object.keys(registreadCommands);
       const { default: CommandModule } = await import(commandModulePath);
       const commandInstance = new CommandModule();
 
-      console.log(`commandInstance`);
-      console.log(commandInstance);
-
       // Assuming the imported module has a run function
       if (typeof commandInstance.run === 'function') {
           await commandInstance.run();

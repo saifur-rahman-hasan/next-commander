@@ -1,0 +1,9 @@
+import {NextRequest, NextResponse} from "next/server";
+import { ApiController, ApiCrudController } from "@/core/ApiController";
+
+
+export default class ExampleController extends ApiController implements ApiCrudController{
+    constructor(req: NextRequest, res: NextResponse) {
+        super(req, res)
+    }
+}

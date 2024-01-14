@@ -10,6 +10,7 @@ import inquirer from "inquirer";
 const prompt = inquirer.createPromptModule();
 
 const registreadCommands: Record<string, string> = {
+    "create-project": "./dist/commands/InstallNextProject.mjs",
     "init": "./dist/commands/NextCommanderInit.mjs",
     "make-module": "./dist/commands/MakeModule.mjs",
     "make-controller": "./dist/commands/MakeController.mjs",
