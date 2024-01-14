@@ -48,7 +48,7 @@ export default class ButtonComponent {
         const content = await response.text();
 
         // const filePath = path.join(process.cwd(), 'src', 'core', fileName);
-        const newFileName = `${path.basename(fileName, path.extname(fileName))}.ts`;
+        const newFileName = `${path.basename(fileName, path.extname(fileName))}.tsx`;
         const filePath = path.join(this.destinationPath, newFileName);
 
         try {
