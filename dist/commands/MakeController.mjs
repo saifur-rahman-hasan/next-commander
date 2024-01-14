@@ -6,7 +6,7 @@ export default class MakeController {
     constructor() {
         this.exampleFilePath = path.join(process.cwd(), 'dist', 'InputFiles', 'ExampleController.stub');
         this.modulesPath = path.join(process.cwd(), 'src', 'modules');
-        this.controllersPath = path.join(this.modulesPath);
+        this.moduleControllersPath = path.join(this.modulesPath);
     }
 
     async run() {
@@ -24,13 +24,16 @@ export default class MakeController {
             return;
         }
 
-        const destinationPath = path.join(this.controllersPath, moduleName, `${controllerName}.ts`);
+        this.modulesPath = path.join(this.modulesPath, moduleName)
+        this.moduleControllersPath = path.join(this.modulesPath, 'Controllers')
+
+        const destinationPath = path.join(this.moduleControllersPath, `${controllerName}.ts`);
 
         try {
             const exampleContent = fs.readFileSync(this.exampleFilePath, 'utf-8');
             const controllerContent = exampleContent.replace(/ExampleController/g, controllerName);
 
-            this.createDirectoryIfNotExists(path.join(this.controllersPath, moduleName));
+            this.createDirectoryIfNotExists(path.join(this.moduleControllersPath));
             fs.writeFileSync(destinationPath, controllerContent);
 
             console.log(`Controller created successfully at: ${destinationPath}`);
@@ -63,8 +66,14 @@ export default class MakeController {
                 name: 'controllerName',
                 message: 'Enter the name for the new controller:',
                 validate: (value) => value.trim() !== '',
+                filter: (value) => this.normalizeControllerName(value),
             },
         ]).then((answers) => answers.controllerName);
+    }
+
+    normalizeControllerName(input) {
+        // Remove non-alphanumeric characters, capitalize first letter, and append "Controller"
+        return input.replace(/[^a-zA-Z0-9]/g, '').charAt(0).toUpperCase() + input.slice(1) + 'Controller';
     }
 
     fetchAvailableModules() {
