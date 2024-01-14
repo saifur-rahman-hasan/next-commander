@@ -11,6 +11,7 @@ async function promptUserForModelName() {
             message: 'Enter the name for your model:',
         },
     ]);
+    
     return modelName;
 }
 

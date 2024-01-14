@@ -16,17 +16,19 @@ export default class CreateProject extends CommanderContracts {
         const apiUrl = this.repositoryContentLink + pathInRepo;
 
         const projects = await this.fetchAvailableProjects(apiUrl);
-        const projectInfo = await this.promptUser(projects);
-
+        const projectInfo = await this.promptProjectInfo(projects);
 
         const { 
-            name: projectName, 
-            path: projectPath, 
+            selectedProject,
             moduleDirName 
         } = projectInfo;
 
-        const apiUrlForSelectedProject = `${this.repositoryContentLink}${projectPath}`;
+        const projectName = selectedProject?.name
+        const projectPath = selectedProject?.path
 
+        const apiUrlForSelectedProject = `${this.repositoryContentLink}/${projectPath}`;
+        console.log(`apiUrlForSelectedProject`, apiUrlForSelectedProject)
+        
         try {
             const response = await fetch(apiUrlForSelectedProject);
             const data = await response.json();
@@ -47,19 +49,20 @@ export default class CreateProject extends CommanderContracts {
                 console.error(`Error fetching data for the selected project from GitHub API: ${JSON.stringify(data)}`);
             }
         } catch (error) {
+            console.log(error)
             console.error(`Error fetching data from GitHub API: ${error}`);
         }
     }
 
-    async fetchAvailableProjects() {
+    async fetchAvailableProjects(apiUrl) {
         try {
             const response = await fetch(apiUrl);
             const data = await response.json();
-            
+
             if (Array.isArray(data)) {
                 return data.map(project => ({
-                    name: project.name,
-                    path: project.path,
+                    name: project?.name,
+                    path: project?.path,
                 }));
             } else {
                 console.error(`Error fetching project data from GitHub API: ${JSON.stringify(data)}`);
@@ -71,14 +74,26 @@ export default class CreateProject extends CommanderContracts {
         }
     }
 
-    async promptProjectInfo() {
+    async promptProjectInfo(projects) {
+        const projectChoices = projects.map((project) => ({
+            name: project.name,
+            value: project,
+        }));
+
         return inquirer.prompt([
             {
+                type: 'list',
+                name: 'selectedProject',
+                message: 'Choose a project:',
+                choices: projectChoices,
+            },
+            {
                 type: 'input',
-                name: 'project',
-                message: 'Select Project Template:',
+                name: 'moduleDirName',
+                message: 'Enter the directory name for the copied module in your project:',
+                default: (answers) => answers.selectedProject.name,
                 validate: (value) => value.trim() !== '',
-            }
+            },
         ]);
     }
 
@@ -88,8 +103,8 @@ export default class CreateProject extends CommanderContracts {
         }
     }
 
-    async copyDirectory(url, dirName) {
-        const directoryPath = path.join(this.destinationPath, dirName);
+    async copyDirectory(url, dirName, parentModuleDirName) {
+        const directoryPath = path.join(this.destinationPath, parentModuleDirName, dirName);
         this.createDirectoryIfNotExists(directoryPath);
 
         const dirApiUrl = `${url}?recursive=1`;
@@ -100,8 +115,10 @@ export default class CreateProject extends CommanderContracts {
 
             for (const item of data.tree) {
                 if (item.type === 'blob') {
-                    await this.downloadAndSaveFile(item.url, item.path.replace(`${dirName}/`, ''));
+                    await this.downloadAndSaveFile(item.url, item.path.replace(`${dirName}/`, ''), parentModuleDirName);
                     console.log(`Copied file: ${item.path}`);
+                } else if (item.type === 'tree') {
+                    await this.copyDirectory(item.url, item.path, path.join(parentModuleDirName, dirName));
                 }
             }
         } catch (error) {
@@ -117,7 +134,11 @@ export default class CreateProject extends CommanderContracts {
     
         const response = await fetch(url);
         const content = await response.text();
-    
+
+        console.log(`url, fileName, moduleDirName`, {
+            url, fileName, moduleDirName
+        })
+
         const filePath = path.join(this.destinationPath, moduleDirName, fileName);
     
         try {
