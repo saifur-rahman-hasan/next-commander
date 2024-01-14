@@ -17,7 +17,7 @@ const registreadCommands = {
     "make-repository": "./commands/MakeRepository.mjs",
     "make-interface": "./commands/MakeInterface.mjs",
     "make-config": "./commands/MakeConfig.mjs",
-    "make-component": "./commands/MakeComponent.mjs",
+    "make-component": "./commands/makeComponent/index.mjs",
     "make-action": "./commands/MakeAction.mjs",
 }
 
