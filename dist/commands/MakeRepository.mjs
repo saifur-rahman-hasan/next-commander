@@ -2,11 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import inquirer from "inquirer";
 
-export default class MakeController {
+export default class MakeRepository {
     constructor() {
-        this.exampleFilePath = path.join(process.cwd(), 'InputFiles', 'ExampleController.stub');
+        this.exampleFilePath = path.join(process.cwd(), 'InputFiles', 'ExampleRepository.stub');
         this.modulesPath = path.join(process.cwd(), 'src', 'modules');
-        this.moduleControllersPath = path.join(this.modulesPath);
+        this.moduleRepositoriesPath = path.join(this.modulesPath);
     }
 
     async run() {
@@ -17,28 +17,28 @@ export default class MakeController {
             return;
         }
 
-        const controllerName = await this.promptControllerName();
+        const repositoryName = await this.promptRepositoryName();
 
-        if (!controllerName) {
-            console.error("Error: Invalid controller name");
+        if (!repositoryName) {
+            console.error("Error: Invalid repository name");
             return;
         }
 
-        this.modulesPath = path.join(this.modulesPath, moduleName)
-        this.moduleControllersPath = path.join(this.modulesPath, 'Controllers')
+        this.modulesPath = path.join(this.modulesPath, moduleName);
+        this.moduleRepositoriesPath = path.join(this.modulesPath, 'Repositories');
 
-        const destinationPath = path.join(this.moduleControllersPath, `${controllerName}.ts`);
+        const destinationPath = path.join(this.moduleRepositoriesPath, `${repositoryName}.ts`);
 
         try {
             const exampleContent = fs.readFileSync(this.exampleFilePath, 'utf-8');
-            const controllerContent = exampleContent.replace(/ExampleController/g, controllerName);
+            const repositoryContent = exampleContent.replace(/ExampleRepository/g, repositoryName);
 
-            this.createDirectoryIfNotExists(path.join(this.moduleControllersPath));
-            fs.writeFileSync(destinationPath, controllerContent);
+            this.createDirectoryIfNotExists(path.join(this.moduleRepositoriesPath));
+            fs.writeFileSync(destinationPath, repositoryContent);
 
-            console.log(`Controller created successfully at: ${destinationPath}`);
+            console.log(`Repository created successfully at: ${destinationPath}`);
         } catch (error) {
-            console.error(`Error creating controller: ${error}`);
+            console.error(`Error creating repository: ${error}`);
         }
     }
 
@@ -59,21 +59,21 @@ export default class MakeController {
         ]).then((answers) => answers.moduleName);
     }
 
-    async promptControllerName() {
+    async promptRepositoryName() {
         return inquirer.prompt([
             {
                 type: 'input',
-                name: 'controllerName',
-                message: 'Enter the name for the new controller:',
+                name: 'repositoryName',
+                message: 'Enter the name for the new repository:',
                 validate: (value) => value.trim() !== '',
-                filter: (value) => this.normalizeControllerName(value),
+                filter: (value) => this.normalizeRepositoryName(value),
             },
-        ]).then((answers) => answers.controllerName);
+        ]).then((answers) => answers.repositoryName);
     }
 
-    normalizeControllerName(input) {
-        // Remove non-alphanumeric characters, capitalize first letter, and append "Controller"
-        return input.replace(/[^a-zA-Z0-9]/g, '').charAt(0).toUpperCase() + input.slice(1) + 'Controller';
+    normalizeRepositoryName(input) {
+        // Remove non-alphanumeric characters, capitalize first letter, and append "Repository"
+        return input.replace(/[^a-zA-Z0-9]/g, '').charAt(0).toUpperCase() + input.slice(1) + 'Repository';
     }
 
     fetchAvailableModules() {
