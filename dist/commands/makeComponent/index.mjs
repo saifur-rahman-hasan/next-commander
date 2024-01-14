@@ -10,15 +10,10 @@ import inquirer from "inquirer";
 const prompt = inquirer.createPromptModule();
 
 const registreadCommands = {
-    "init": "./commands/NextCommanderInit.mjs",
-    "make-module": "./commands/MakeModule.mjs",
-    "make-controller": "/commands/MakeController.mjs",
-    "make-model": "./commands/MakeModel.mjs",
-    "make-repository": "./commands/MakeRepository.mjs",
-    "make-interface": "./commands/MakeInterface.mjs",
-    "make-config": "./commands/MakeConfig.mjs",
-    "make-component": "./commands/makeComponent/index.mjs",
-    "make-action": "./commands/MakeAction.mjs",
+    "LandingPage": "./MakeComponent.mjs",
+    "Button": "./ButtonComponent.mjs",
+    "NavBar": "/MakeComponent.mjs",
+    "Dialog": "./MakeComponent.mjs",
 }
 
 const commandChoiceOptions = Object.keys(registreadCommands);

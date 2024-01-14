@@ -10,7 +10,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build --outDir=./dist",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "command" : "node ./dist/index.mjs"
   },
   "keywords": [
     "next-commander",
