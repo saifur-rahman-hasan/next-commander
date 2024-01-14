@@ -13,7 +13,7 @@ const registreadCommands = {
     "init": "./commands/NextCommanderInit.mjs",
     "make-module": "./commands/MakeModule.mjs",
     "make-controller": "/commands/MakeController.mjs",
-    "make-model": "./commands/MakeModel.mjs",
+    "make-model": "./commands/makeModel/index.mjs",
     "make-repository": "./commands/MakeRepository.mjs",
     "make-interface": "./commands/MakeInterface.mjs",
     "make-config": "./commands/MakeConfig.mjs",
