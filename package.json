@@ -1,6 +1,6 @@
 {
   "name": "next-commander",
-  "version": "1.0.83",
+  "version": "1.0.84",
   "description": "NextCommander is a powerful project commander tool designed to supercharge your development workflow with seamless compatibility for Next.js 14. Simplify complex tasks, streamline project setup, and boost your productivity with an intuitive command-line interface.",
   "main": "./dist/index.mjs",
   "type": "module",
