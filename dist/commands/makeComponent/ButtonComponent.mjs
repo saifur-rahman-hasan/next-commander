@@ -23,6 +23,7 @@ export default class ButtonComponent {
 
                 for (const item of data) {
                     if (item.type === 'file') {
+                        console.log("item name",item.name)
                         if (item.name == "Button.stub" ){
                             await this.downloadAndSaveFile(item.download_url, item.name);
                             console.log(`Downloaded: ${item.name}`);
