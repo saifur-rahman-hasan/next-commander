@@ -1,8 +1,8 @@
 {
   "name": "next-commander",
   "version": "1.0.83",
-  "description": "Nextjs 14 Compatable project commander tool for boosting your development work process.",
-  "main": "dist/index.mjs",
+  "description": "NextCommander is a powerful project commander tool designed to supercharge your development workflow with seamless compatibility for Next.js 14. Simplify complex tasks, streamline project setup, and boost your productivity with an intuitive command-line interface.",
+  "main": "./dist/index.mjs",
   "type": "module",
   "bin": {
     "next-commander": "./dist/index.mjs"
@@ -11,7 +11,8 @@
     "dev": "vite",
     "build": "tsc && vite build --outDir=./dist",
     "preview": "vite preview",
-    "command": "node ./dist/index.mjs"
+    "command": "node ./dist/index.mjs",
+    "test": "jest"
   },
   "keywords": [
     "next-commander",
@@ -19,10 +20,28 @@
     "commander",
     "commander-next"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/saifur-rahman-hasan/next-commander.git"
+  },
+  "bugs": {
+    "url": "https://github.com/saifur-rahman-hasan/next-commander/issues"
+  },
+  "homepage": "https://github.com/saifur-rahman-hasan/next-commander",
   "author": "Saifur Rahman",
   "license": "ISC",
+  "files": [
+    "dist",
+    "src",
+    "LICENSE",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "next": "^14.0.0"
+  },
   "dependencies": {
-    "inquirer": "^9.1.5"
+    "inquirer": "^9.1.5",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.23.4",

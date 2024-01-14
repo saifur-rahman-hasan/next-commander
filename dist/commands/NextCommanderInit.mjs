@@ -1,37 +1,45 @@
 import fs from 'fs';
 import path from 'path';
+import fetch from 'node-fetch';
 
 export default class NextCommanderInit {
-    constructor(){
+    constructor(config) {
         this.destinationPath = path.join(process.cwd(), 'src', 'core');
+        this.config = config;
     }
 
     async run() {
-        const owner = 'saifur-rahman-hasan';
-        const repo = 'next-commander';
-        const pathInRepo = 'dist/InputFiles/core';
-
-        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${pathInRepo}`;
-
         try {
-            const response = await fetch(apiUrl);``
-            const data = await response.json();
-            
-            
+            const data = await this.fetchDataFromGitHub();
+
             if (Array.isArray(data)) {
                 this.createDirectoryIfNotExists(this.destinationPath);
-
-                for (const item of data) {
-                    if (item.type === 'file') {
-                        await this.downloadAndSaveFile(item.download_url, item.name);
-                        console.log(`Downloaded: ${item.name}`);
-                    }
-                }
+                await this.downloadAndSaveFiles(data);
             } else {
-                console.error(`Error fetching data from GitHub API: ${JSON.stringify(data)}`);
+                console.error(`Error: Invalid data received from GitHub API: ${JSON.stringify(data)}`);
             }
         } catch (error) {
-            console.error(`Error fetching data from GitHub API: ${error}`);
+            console.error(`Error: ${error.message}`);
+        }
+    }
+
+    async fetchDataFromGitHub() {
+        const apiUrl = this.config.inputFilesDir + '/core';
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch data from GitHub API: ${response.statusText}`);
+        }
+
+        return response.json();
+    }
+
+    async downloadAndSaveFiles(data) {
+        for (const item of data) {
+            if (item.type === 'file') {
+                await this.downloadAndSaveFile(item.download_url, item.name);
+                console.log(`Downloaded: ${item.name}`);
+            }
         }
     }
 
@@ -42,16 +50,18 @@ export default class NextCommanderInit {
         }
 
         const response = await fetch(url);
-        const content = await response.text();
 
-        // const filePath = path.join(process.cwd(), 'src', 'core', fileName);
-        const newFileName = `${path.basename(fileName, path.extname(fileName))}.ts`;
-        const filePath = path.join(this.destinationPath, newFileName);
+        if (!response.ok) {
+            throw new Error(`Failed to download file ${fileName}: ${response.statusText}`);
+        }
+
+        const content = await response.text();
+        const filePath = path.join(this.destinationPath, fileName);
 
         try {
             fs.writeFileSync(filePath, content);
         } catch (error) {
-            console.error(`Error writing file ${fileName}: ${error}`);
+            console.error(`Error writing file ${fileName}: ${error.message}`);
         }
     }
 

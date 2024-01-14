@@ -7,11 +7,11 @@ export default class BaseCommand {
 
 export async function readJsonFile(filePath) {
     try {
-      const fileContent = await fs.promises.readFile(filePath, 'utf-8');
-      const jsonObject = JSON.parse(fileContent);
-      return jsonObject;
+        const fileContent = await fs.promises.readFile(filePath, 'utf-8');
+        const jsonObject = JSON.parse(fileContent);
+        return jsonObject;
     } catch (error) {
-      throw new Error(`Error reading JSON file: ${error.message}`);
+        throw new Error(`Error reading JSON file: ${error.message}`);
     }
-  }
+}
   
