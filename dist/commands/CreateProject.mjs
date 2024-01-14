@@ -12,38 +12,62 @@ export default class CreateProject extends CommanderContracts {
 
     async run() {
 
-        const projectInfo = await this.promptProjectInfo();
+        const pathInRepo = 'dist/InputFiles/projects';
+        const apiUrl = this.repositoryContentLink + pathInRepo;
+
+        const projects = await this.fetchAvailableProjects(apiUrl);
+        const projectInfo = await this.promptUser(projects);
+
+
         const { 
-            project 
+            name: projectName, 
+            path: projectPath, 
+            moduleDirName 
         } = projectInfo;
 
-        const pathInRepo = '/dist/InputFiles';
-        const apiUrl = this.repositoryContentLink + pathInRepo
+        const apiUrlForSelectedProject = `${this.repositoryContentLink}${projectPath}`;
 
         try {
-            const response = await fetch(apiUrl);
+            const response = await fetch(apiUrlForSelectedProject);
             const data = await response.json();
 
             if (Array.isArray(data)) {
+                this.createDirectoryIfNotExists(this.destinationPath);
 
-                console.log(`data`, data)
-
-                // this.createDirectoryIfNotExists(this.destinationPath);
-
-                // for (const item of data) {
-                //     if (item.type === 'file') {
-                //         await this.downloadAndSaveFile(item.download_url, item.name);
-                //         console.log(`Downloaded: ${item.name}`);
-                //     } else if (item.type === 'dir') {
-                //         await this.copyDirectory(item.url, item.name);
-                //         console.log(`Copied directory: ${item.name}`);
-                //     }
-                // }
+                for (const item of data) {
+                    if (item.type === 'file') {
+                        await this.downloadAndSaveFile(item.download_url, item.name, moduleDirName);
+                        console.log(`Downloaded: ${item.name}`);
+                    } else if (item.type === 'dir') {
+                        await this.copyDirectory(item.url, item.name, moduleDirName);
+                        console.log(`Copied directory: ${item.name}`);
+                    }
+                }
             } else {
-                console.error(`Error fetching data from GitHub API: ${JSON.stringify(data)}`);
+                console.error(`Error fetching data for the selected project from GitHub API: ${JSON.stringify(data)}`);
             }
         } catch (error) {
             console.error(`Error fetching data from GitHub API: ${error}`);
+        }
+    }
+
+    async fetchAvailableProjects() {
+        try {
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+            
+            if (Array.isArray(data)) {
+                return data.map(project => ({
+                    name: project.name,
+                    path: project.path,
+                }));
+            } else {
+                console.error(`Error fetching project data from GitHub API: ${JSON.stringify(data)}`);
+                return [];
+            }
+        } catch (error) {
+            console.error(`Error fetching project data from GitHub API: ${error}`);
+            return [];
         }
     }
 
@@ -85,21 +109,20 @@ export default class CreateProject extends CommanderContracts {
         }
     }
 
-    async downloadAndSaveFile(url, fileName) {
+    async downloadAndSaveFile(url, fileName, moduleDirName) {
         if (!url || !fileName) {
             console.error(`Error: Invalid url or fileName`);
             return;
         }
-
+    
         const response = await fetch(url);
         const content = await response.text();
-
-        // const filePath = path.join(process.cwd(), 'src', 'core', fileName);
-        const newFileName = `${path.basename(fileName, path.extname(fileName))}.ts`;
-        const filePath = path.join(this.destinationPath, newFileName);
-
+    
+        const filePath = path.join(this.destinationPath, moduleDirName, fileName);
+    
         try {
             fs.writeFileSync(filePath, content);
+            console.log(`Downloaded: ${fileName}`);
         } catch (error) {
             console.error(`Error writing file ${fileName}: ${error}`);
         }
