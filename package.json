@@ -1,6 +1,6 @@
 {
   "name": "next-commander",
-  "version": "1.0.81",
+  "version": "1.0.82",
   "description": "Nextjs 14 Compatable project commander tool for boosting your development work process.",
   "main": "dist/index.mjs",
   "type": "module",
@@ -11,7 +11,7 @@
     "dev": "vite",
     "build": "tsc && vite build --outDir=./dist",
     "preview": "vite preview",
-    "command" : "node ./dist/index.mjs"
+    "command": "node ./dist/index.mjs"
   },
   "keywords": [
     "next-commander",
