@@ -1,36 +1,38 @@
 import fs from 'fs';
 import path from 'path';
-import inquirer from "inquirer";
+import inquirer from 'inquirer';
+import BaseCommand from './BaseCommand.mjs';
 
-export default class MakeController {
+export default class MakeController extends BaseCommand {
     constructor() {
-        this.exampleFilePath = path.join(process.cwd(), 'InputFiles', 'ExampleController.stub');
+        this.exampleFileUrl = this.repositoryContentLink + '/ExampleController.stub';
         this.modulesPath = path.join(process.cwd(), 'src', 'modules');
         this.moduleControllersPath = path.join(this.modulesPath);
+        console.log(`this.exampleFileUrl`, this.exampleFileUrl)
     }
 
     async run() {
         const moduleName = await this.promptModuleName();
 
         if (!moduleName) {
-            console.error("Error: Invalid module name");
+            console.error('Error: Invalid module name');
             return;
         }
 
         const controllerName = await this.promptControllerName();
 
         if (!controllerName) {
-            console.error("Error: Invalid controller name");
+            console.error('Error: Invalid controller name');
             return;
         }
 
-        this.modulesPath = path.join(this.modulesPath, moduleName)
-        this.moduleControllersPath = path.join(this.modulesPath, 'Controllers')
+        this.modulesPath = path.join(this.modulesPath, moduleName);
+        this.moduleControllersPath = path.join(this.modulesPath, 'Controllers');
 
         const destinationPath = path.join(this.moduleControllersPath, `${controllerName}.ts`);
 
         try {
-            const exampleContent = fs.readFileSync(this.exampleFilePath, 'utf-8');
+            const exampleContent = await this.fetchExampleFile();
             const controllerContent = exampleContent.replace(/ExampleController/g, controllerName);
 
             this.createDirectoryIfNotExists(path.join(this.moduleControllersPath));
@@ -92,6 +94,18 @@ export default class MakeController {
     createDirectoryIfNotExists(directoryPath) {
         if (!fs.existsSync(directoryPath)) {
             fs.mkdirSync(directoryPath, { recursive: true });
+        }
+    }
+
+    async fetchExampleFile() {
+        try {
+            const response = await fetch(this.exampleFileUrl);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch example file. Status: ${response.status}`);
+            }
+            return await response.text();
+        } catch (error) {
+            throw new Error(`Error fetching example file: ${error.message}`);
         }
     }
 }
