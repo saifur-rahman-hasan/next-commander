@@ -1,0 +1,298 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Enum declaration for UserType
+enum UserType {
+  INDIVIDUAL // Represents individual users
+  BUSINESS // Represents business users
+}
+
+// Enum for address type which allows the address to be categorized
+enum AddressType {
+  PRIMARY
+  BILLING
+}
+
+// Enum to specify the billing cycle for clarity and consistency
+enum BillingCycle {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+// Enum to define the status of the package, whether it's available, archived, or something else
+enum PackageStatus {
+  AVAILABLE
+  UNAVAILABLE
+  ARCHIVED
+}
+
+enum TokenType {
+  AUTHENTICATION_TOKEN
+  PASSWORD_RESET_TOKEN
+}
+
+enum ModelType {
+  USER
+}
+
+// User Model
+model User {
+  id            String    @id @default(uuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  userVerified  Boolean?  @default(false)
+  image         String?
+  password      String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  address        UserAddress[]
+  userProfile    UserProfile[]
+  securityAnswer SecurityAnswer[]
+}
+
+// User Account Model
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+// User Login Session Model
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String   @unique
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// User Login Verification Token Model
+model VerificationToken {
+  id         String    @id @default(uuid())
+  identifier String
+  token      String    @unique
+  type       TokenType
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model UserProfile {
+  id                           String   @id @default(uuid())
+  userId                       String   @unique // Foreign key to the User table
+  userType                     UserType // using the enum type defined above
+  title                        String? // fields are made optional with '?'
+  first_name                   String?
+  last_name                    String?
+  dob                          String? // using DateTime for date fields, nullable for business users
+  phone_number                 String?
+  terms_and_condition_accepted Boolean?
+  created_at                   DateTime @default(now())
+  updated_at                   DateTime @updatedAt
+
+  // Fields specific to business users, nullable for individual users
+  business_name  String?
+  business_email String?
+  businessTypeId String?
+  fax            String?
+  website        String?
+  logo           String?
+
+  // Relationship with User model
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  BusinessType BusinessType? @relation(fields: [businessTypeId], references: [id])
+
+  @@index([userId], name: "userprofile_userId_idx") // create an index on the userId field
+}
+
+model BusinessType {
+  id       String        @id @default(uuid())
+  type     String        @unique // e.g., "Sole Trader", "Partnership", etc.
+  profiles UserProfile[] // Relation to UserProfile
+
+  @@index([type], name: "idx_business_types_type")
+}
+
+// User Address Model
+model UserAddress {
+  id          String      @id @default(uuid())
+  address_1   String      @db.VarChar(255)
+  address_2   String?     @db.VarChar(255)
+  town_city   String      @db.VarChar(255)
+  county      String      @db.VarChar(50)
+  postcode    String      @db.VarChar(100)
+  country     String      @db.VarChar(100)
+  addressType AddressType // Field for the address type which uses the above enum
+  isDefault   Boolean     @default(false) // To quickly identify if the address is the default one for the user
+
+  // Foreign key to establish a relation to the User table (assuming userId is the field in the User model)
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamp(6)
+
+  @@index([userId], name: "userId") // Indexing this field as you might query addresses based on the user often
+}
+
+model ModelHasRoles {
+  id         String    @default(uuid())
+  role_id    String
+  model_type ModelType
+  model_id   String
+
+  @@id([id])
+}
+
+model ModelHasPermissions {
+  id            String    @default(uuid())
+  permission_id String
+  model_type    ModelType
+  model_id      String
+
+  @@id([id])
+}
+
+model RoleHasPermissions {
+  permission_id String
+  role_id       String
+
+  @@id([permission_id, role_id])
+}
+
+model Permission {
+  id         String   @id @default(uuid())
+  name       String   @unique
+  guard_name String?
+  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime @default(now()) @updatedAt @db.Timestamp(6)
+}
+
+model Role {
+  id         String   @id @default(uuid())
+  name       String   @unique
+  guard_name String?
+  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime @default(now()) @updatedAt @db.Timestamp(6)
+}
+
+// Pricing Package Model
+model PricingPackage {
+  id           String        @id @default(uuid())
+  name         String // The name of the pricing package, e.g., "Gold Plan", "Enterprise Plan"
+  description  String? // Optional description for more details about what's included
+  features     Json // List of features encoded as JSON
+  price        Decimal // Decimal for currency ensures precision. Avoid floating point for prices.
+  billingCycle BillingCycle // Monthly, Quarterly, Yearly, etc.
+  status       PackageStatus // To quickly identify if the package is currently available, unavailable, or archived
+
+  // These dates help manage the lifecycle of the pricing package
+  validFrom  DateTime? // Optional date to specify when the package becomes available
+  validUntil DateTime? // Optional date for when the package is retired, if it's a temporary offer
+
+  // If there's a discount period or other temporal aspect, these fields could be relevant
+  discount      Float? // Optional discount field if there's a promotion
+  discountStart DateTime? // The start of the discount period
+  discountEnd   DateTime? // The end of the discount period
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SecurityQuestion {
+  id             String           @id @default(uuid())
+  question       String           @unique // The security question text itself
+  SecurityAnswer SecurityAnswer[]
+
+  @@index([question], name: "idx_security_questions_question")
+}
+
+model SecurityAnswer {
+  id                 String @id @default(uuid())
+  userId             String @unique // Reference to the associated user
+  answer             String // The answer provided by the user
+  securityQuestionId String @unique // Reference to the selected question
+
+  // Relations
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question SecurityQuestion @relation(fields: [securityQuestionId], references: [id])
+
+  @@index([userId], name: "idx_security_answers_userId")
+  @@index([securityQuestionId], name: "idx_security_answers_securityQuestionId")
+}
+
+model Product {
+  id        Int       @id @default(autoincrement())
+  name      String
+  details   String?
+  packages  Package[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Package {
+  id          Int       @id @default(autoincrement())
+  name        String
+  details     String?
+  price       Float
+  productId   Int
+  product     Product   @relation(fields: [productId], references: [id])
+  pricingList Pricing[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Pricing {
+  id         Int       @id @default(autoincrement())
+  price      Float
+  validFrom  DateTime
+  validUntil DateTime?
+  packageId  Int
+  package    Package   @relation(fields: [packageId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model ServiceAccount {
+  id        String    @id @default(uuid())
+  uuid      String    @unique
+  name      String
+  email     String    @unique // Ensure this line is in your schema
+  domain    String
+  ip        String
+  dsid      String // Device Serial ID
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model TestUserCrud {
+  id   String @id @default(uuid())
+  name String
+}

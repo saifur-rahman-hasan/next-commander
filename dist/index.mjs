@@ -10,6 +10,7 @@ import inquirer from "inquirer";
 const prompt = inquirer.createPromptModule();
 
 const registreadCommands = {
+    "create-project": "./commands/CreateProject.mjs",
     "init": "./commands/NextCommanderInit.mjs",
     "make-module": "./commands/MakeModule.mjs",
     "make-controller": "/commands/MakeController.mjs",
@@ -17,7 +18,7 @@ const registreadCommands = {
     "make-repository": "./commands/MakeRepository.mjs",
     "make-interface": "./commands/MakeInterface.mjs",
     "make-config": "./commands/MakeConfig.mjs",
-    "make-component": "./commands/makeComponent/index.mjs",
+    "make-component": "./commands/MakeComponent/index.mjs",
     "make-action": "./commands/MakeAction.mjs",
 }
 

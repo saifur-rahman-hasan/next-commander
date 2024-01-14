@@ -23,6 +23,7 @@ export default class ButtonComponent {
 
                 for (const item of data) {
                     if (item.type === 'file') {
+                        console.log("item name",item.name)
                         if (item.name == "Button.stub" ){
                             await this.downloadAndSaveFile(item.download_url, item.name);
                             console.log(`Downloaded: ${item.name}`);
@@ -47,7 +48,7 @@ export default class ButtonComponent {
         const content = await response.text();
 
         // const filePath = path.join(process.cwd(), 'src', 'core', fileName);
-        const newFileName = `${path.basename(fileName, path.extname(fileName))}.ts`;
+        const newFileName = `${path.basename(fileName, path.extname(fileName))}.tsx`;
         const filePath = path.join(this.destinationPath, newFileName);
 
         try {
