@@ -1,10 +1,11 @@
 import fs from 'fs'
 import inquirer from "inquirer";
+import path from 'path';
 
 const DEFAULT_REGISTREAD_COMMANDS = {
     "create-project": "./commands/CreateProjectCommand.mjs",
     "init": "./commands/NextCommanderInit.mjs",
-    "make-module": "./commands/MakeModule.mjs",
+    "make-module": "./commands/MakeModuleCommand.mjs",
     "make-controller": "./commands/MakeController.mjs",
     "make-model": "./commands/MakeModel/index.mjs",
     "make-repository": "./commands/MakeRepository.mjs",
@@ -46,7 +47,7 @@ export default class NextCommander {
             const commandInstance = new CommandModule(this.config);
 			
 			console.log(`Preparing the selected Command Instance...`)
-			
+
             // Assuming the imported module has a run function
             if (typeof commandInstance.run === 'function') {
                 await commandInstance.run();

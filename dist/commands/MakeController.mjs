@@ -1,11 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import inquirer from 'inquirer';
+import { downloadAndSaveFile } from './BaseCommand.mjs';
 
 export default class MakeController {
     constructor(config) {
         this.config = config
-        this.exampleFileUrl = path.join(process.cwd(), this.config.inputFilesDir, 'ExampleController.ts')
+        this.exampleFileUrl = path.join(this.config.inputFilesDir, 'ExampleController.ts')
         this.modulesPath = path.join(process.cwd(), this.config.outputFilesDir, 'src', 'modules');
         this.moduleControllersPath = path.join(process.cwd(), this.modulesPath);
     }
@@ -44,14 +45,11 @@ export default class MakeController {
         const destinationPath = path.join(this.moduleControllersPath, `${controllerName}.ts`);
 
         try {
-            const exampleContent = await this.fetchExampleFile();
-            const controllerContent = exampleContent.replace(/ExampleController/g, controllerName);
-
-            this.createDirectoryIfNotExists(path.join(this.moduleControllersPath));
-            fs.writeFileSync(destinationPath, controllerContent);
+            await downloadAndSaveFile(this.exampleFileUrl, destinationPath, controllerName)
 
             console.log(`Controller created successfully at: ${destinationPath}`);
         } catch (error) {
+            console.log(error)
             console.error(`Error creating controller: ${error}`);
         }
     }
