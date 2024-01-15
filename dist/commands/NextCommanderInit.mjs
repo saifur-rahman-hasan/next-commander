@@ -4,8 +4,8 @@ import fetch from 'node-fetch';
 
 export default class NextCommanderInit {
     constructor(config) {
-        this.destinationPath = path.join(process.cwd(), 'src', 'core');
         this.config = config;
+        this.destinationPath = path.join(this.config.outputFilesDir, 'src', 'core');
     }
 
     async run() {

@@ -1,50 +1,43 @@
 import fs from 'fs';
 import path from 'path';
 import inquirer from "inquirer";
-import CommanderContracts from './CommanderContracts.mjs';
+import { spawn } from 'child_process';
 
-export default class CreateProject extends CommanderContracts {
-    constructor(){
-        super()
 
-        this.destinationPath = path.join(process.cwd(), 'projects');
+export default class CreateProjectCommand {
+    constructor(config){
+        this.config = config
+        this.destinationPath = path.join(process.cwd(), this.config.outputFilesDir);
     }
 
     async run() {
-
-        const pathInRepo = 'dist/InputFiles/projects';
-        const apiUrl = this.repositoryContentLink + pathInRepo;
-
-        const projects = await this.fetchAvailableProjects(apiUrl);
-        const projectInfo = await this.promptProjectInfo(projects);
-
-        const { 
-            selectedProject,
-            moduleDirName 
-        } = projectInfo;
-
-        const projectName = selectedProject?.name
-        const projectPath = selectedProject?.path
-
-        const apiUrlForSelectedProject = `${this.repositoryContentLink}/${projectPath}`;
-        console.log(`apiUrlForSelectedProject`, apiUrlForSelectedProject)
+        console.log(`####### Running Create Project Command`)
         
+        const projects = await this.fetchAvailableProjects();
+        const selectedProject = await this.promptUserToSelectProject(projects)
+
+        console.log(`Preparing your project: ${selectedProject.name}`)
+
+        const projectGithubLink = path.join(this.config.inputFilesDir, selectedProject?.path)
+
         try {
-            const response = await fetch(apiUrlForSelectedProject);
+            const response = await fetch(projectGithubLink);
             const data = await response.json();
+
+            console.log(`project data`, data)
 
             if (Array.isArray(data)) {
                 this.createDirectoryIfNotExists(this.destinationPath);
 
-                for (const item of data) {
-                    if (item.type === 'file') {
-                        await this.downloadAndSaveFile(item.download_url, item.name, moduleDirName);
-                        console.log(`Downloaded: ${item.name}`);
-                    } else if (item.type === 'dir') {
-                        await this.copyDirectory(item.url, item.name, moduleDirName);
-                        console.log(`Copied directory: ${item.name}`);
-                    }
-                }
+                // for (const item of data) {
+                //     if (item.type === 'file') {
+                //         await this.downloadAndSaveFile(item.download_url, item.name, moduleDirName);
+                //         console.log(`Downloaded: ${item.name}`);
+                //     } else if (item.type === 'dir') {
+                //         await this.copyDirectory(item.url, item.name, moduleDirName);
+                //         console.log(`Copied directory: ${item.name}`);
+                //     }
+                // }
             } else {
                 console.error(`Error fetching data for the selected project from GitHub API: ${JSON.stringify(data)}`);
             }
@@ -52,18 +45,40 @@ export default class CreateProject extends CommanderContracts {
             console.log(error)
             console.error(`Error fetching data from GitHub API: ${error}`);
         }
+
+        console.log(`####### Stopped Create Project Command`)
     }
 
-    async fetchAvailableProjects(apiUrl) {
+    async promptUserToSelectProject(projects) {
+        const selectedProjectAnswer = await inquirer.prompt([
+            {
+                type: 'list',
+                name: 'selectedProject',
+                message: 'Choose your project.',
+                choices: projects,
+            },
+        ]).then(ans => {return ans.selectedProject})
+        
+        const selectedProject = projects.find(project => project.name === selectedProjectAnswer);
+
+        // Check if the selected project exists
+        if (selectedProject) {
+            // Remove 'InputFiles/' from the path property
+            selectedProject.path = selectedProject.path.replace('InputFiles/', '');
+        }
+        return selectedProject;
+
+    }
+
+    async fetchAvailableProjects() {
         try {
-            const response = await fetch(apiUrl);
+            const response = await fetch(`${this.config.inputFilesDir}/projects`);
             const data = await response.json();
 
             if (Array.isArray(data)) {
-                return data.map(project => ({
-                    name: project?.name,
-                    path: project?.path,
-                }));
+                return data.filter(project => {
+                    return project.type === 'dir'
+                });
             } else {
                 console.error(`Error fetching project data from GitHub API: ${JSON.stringify(data)}`);
                 return [];
@@ -115,7 +130,7 @@ export default class CreateProject extends CommanderContracts {
 
             for (const item of data.tree) {
                 if (item.type === 'blob') {
-                    await this.downloadAndSaveFile(item.url, item.path.replace(`${dirName}/`, ''), parentModuleDirName);
+                    await this.downloadAndSaveFile(item.url, item.path.replace(`${dirName}/`, ''));
                     console.log(`Copied file: ${item.path}`);
                 } else if (item.type === 'tree') {
                     await this.copyDirectory(item.url, item.path, path.join(parentModuleDirName, dirName));
@@ -126,7 +141,7 @@ export default class CreateProject extends CommanderContracts {
         }
     }
 
-    async downloadAndSaveFile(url, fileName, moduleDirName) {
+    async downloadAndSaveFile(url, fileName) {
         if (!url || !fileName) {
             console.error(`Error: Invalid url or fileName`);
             return;
@@ -135,11 +150,7 @@ export default class CreateProject extends CommanderContracts {
         const response = await fetch(url);
         const content = await response.text();
 
-        console.log(`url, fileName, moduleDirName`, {
-            url, fileName, moduleDirName
-        })
-
-        const filePath = path.join(this.destinationPath, moduleDirName, fileName);
+        const filePath = path.join(this.destinationPath, fileName);
     
         try {
             fs.writeFileSync(filePath, content);

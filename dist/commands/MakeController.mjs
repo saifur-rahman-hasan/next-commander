@@ -1,17 +1,29 @@
 import fs from 'fs';
 import path from 'path';
 import inquirer from 'inquirer';
-import BaseCommand from './BaseCommand.mjs';
 
-export default class MakeController extends BaseCommand {
-    constructor() {
-        this.exampleFileUrl = this.repositoryContentLink + '/ExampleController.stub';
-        this.modulesPath = path.join(process.cwd(), 'src', 'modules');
-        this.moduleControllersPath = path.join(this.modulesPath);
-        console.log(`this.exampleFileUrl`, this.exampleFileUrl)
+export default class MakeController {
+    constructor(config) {
+        this.config = config
+        this.exampleFileUrl = path.join(process.cwd(), this.config.inputFilesDir, 'ExampleController.ts')
+        this.modulesPath = path.join(process.cwd(), this.config.outputFilesDir, 'src', 'modules');
+        this.moduleControllersPath = path.join(process.cwd(), this.modulesPath);
+    }
+
+    directoryExists(directoryPath) {
+        return fs.existsSync(directoryPath) && fs.statSync(directoryPath).isDirectory();
+    }
+
+    createDirectoryIfNotExists(directoryPath) {
+        if (!directoryExists(directoryPath)) {
+            fs.mkdirSync(directoryPath, { recursive: true });
+        }
     }
 
     async run() {
+
+        this.createDirectoryIfNotExists(this.modulesPath)
+
         const moduleName = await this.promptModuleName();
 
         if (!moduleName) {
@@ -45,20 +57,48 @@ export default class MakeController extends BaseCommand {
     }
 
     async promptModuleName() {
-        const availableModules = this.fetchAvailableModules();
-        const moduleChoices = availableModules.map((module) => ({
-            name: module,
-            value: module,
-        }));
+        try {
+            console.log(`promptModuleName:`)
+            const availableModules = this.fetchAvailableModules();
+            console.log(`availableModules`, availableModules)
 
-        return inquirer.prompt([
-            {
-                type: 'list',
-                name: 'moduleName',
-                message: 'Choose a module:',
-                choices: moduleChoices,
-            },
-        ]).then((answers) => answers.moduleName);
+            if(!availableModules?.length > 0){
+                const moduleName = await inquirer.prompt([
+                    {
+                        type: 'input',
+                        name: 'moduleName',
+                        message: 'Enter the name for the new module:',
+                        validate: (value) => value.trim() !== '',
+                    },
+                ]).then(ans => ans.moduleName)
+
+                this.moduleControllersPath = path.join(this.modulesPath, moduleName, 'Controllers')
+
+                this.createDirectoryIfNotExists(this.moduleControllersPath)
+                
+                this.promptModuleName()
+            }
+
+
+            const moduleChoices = availableModules.map((module) => ({
+                name: module,
+                value: module,
+            }));
+        
+            if(moduleChoices?.length > 0){
+                return await inquirer.prompt([
+                    {
+                        type: 'list',
+                        name: 'moduleName',
+                        message: 'Choose a module:',
+                        choices: moduleChoices,
+                    },
+                ]).then((answers) => answers.moduleName);
+            }
+
+        } catch (error) {
+            console.log(`error`, error)
+        }
     }
 
     async promptControllerName() {
@@ -105,6 +145,7 @@ export default class MakeController extends BaseCommand {
             }
             return await response.text();
         } catch (error) {
+            console.log(error)
             throw new Error(`Error fetching example file: ${error.message}`);
         }
     }

@@ -2,7 +2,7 @@ import fs from 'fs'
 import inquirer from "inquirer";
 
 const DEFAULT_REGISTREAD_COMMANDS = {
-    "create-project": "./commands/CreateProject.mjs",
+    "create-project": "./commands/CreateProjectCommand.mjs",
     "init": "./commands/NextCommanderInit.mjs",
     "make-module": "./commands/MakeModule.mjs",
     "make-controller": "./commands/MakeController.mjs",
@@ -18,7 +18,8 @@ const DEFAULT_CONFIG = {
     owner: "$1",
     repo: "$2",
     access: "$3",
-    inputFilesDir: "https://api.github.com/repos/$1/$2/contents/$3?access_token=$4"
+    inputFilesDir: "https://api.github.com/repos/$1/$2/contents/$4",
+	outputFilesDir: "$5"
 }
 
 export default class NextCommander {
@@ -35,12 +36,6 @@ export default class NextCommander {
       try {
         this.config = await this.getConfig()
 
-        console.log('!!! Config OK !!!')
-        console.log('config', {
-            cwd: this.cwd,
-            config: this.config
-        });
-
 		console.log('Loading your commands...')
         const selectedCommand = await this.promptUserToSelectCommand()
 
@@ -51,7 +46,7 @@ export default class NextCommander {
             const commandInstance = new CommandModule(this.config);
 			
 			console.log(`Preparing the selected Command Instance...`)
-
+			
             // Assuming the imported module has a run function
             if (typeof commandInstance.run === 'function') {
                 await commandInstance.run();
@@ -81,9 +76,15 @@ export default class NextCommander {
 	}
 
     async getConfig() {
-        return !this.configFileExists()
-            ? await this.collectGitHubInfo()
-            : await this.updateConfig();
+      const configData = !this.configFileExists()
+        ? await this.confirmConfigData()
+        : await this.updateConfig();
+		
+		if(!configData){
+			throw new Error("Config Data is not properly ready")
+		}
+
+        return configData;
     }
   
     configFileExists() {
@@ -100,7 +101,7 @@ export default class NextCommander {
       }
     }
   
-    async collectGitHubInfo() {
+    async confirmConfigData() {
       const githubInfoQuestions = [
         {
           type: 'input',
@@ -124,6 +125,12 @@ export default class NextCommander {
           message: 'Enter your InputFiles directory path:',
           default: 'InputFiles'
         },
+		{
+			type: 'input',
+			name: 'outputFilesDir',
+			message: 'Enter your InputFiles directory path:',
+			default: 'OutputFiles'
+		},
       ];
   
       try {
@@ -137,12 +144,13 @@ export default class NextCommander {
     saveConfigFile(data) {
       try {
         
-        const {owner, repo, access, inputFilesDir} = data
+        const {owner, repo, access, inputFilesDir, outputFilesDir} = data
         const inputFilesDirRepoLink = `https://api.github.com/repos/${owner}/${repo}/contents/${inputFilesDir}`
   
         const jsonData = {
           ...data, 
-          inputFilesDir: inputFilesDirRepoLink
+          inputFilesDir: inputFilesDirRepoLink,
+		  outputFilesDir: `./${outputFilesDir}`
         }
   
         fs.writeFileSync(this.configPath, JSON.stringify(jsonData, null, 2));
@@ -158,11 +166,11 @@ export default class NextCommander {
       try {
         const existingConfig = await this.readConfigFile();
         const missingKeys = Object.keys(this.config).filter(key => !(key in existingConfig));
-  
+
         if (missingKeys.length > 0) {
 			console.log("The existing configuration is incomplete. Please provide the missing information:");
-  
-          	return await this.collectGitHubInfo();
+			console.log('missingKeys', missingKeys)
+			return await this.confirmConfigData()
         }else{
             return existingConfig
         }
@@ -171,6 +179,24 @@ export default class NextCommander {
       }
     }
   
+	async handleMissingKeys(missingKeys) {
+		console.log('Found some missing keys in config. Help us to fix it.')
+
+		const missingKeysAnswers = await missingKeys.map(async (missingKey) => {
+			const missingKeyAnswer = await inquirer.prompt([
+				{
+					type: 'input',
+					name: `${missingKey}`,
+					message: `Enter the ${missingKey} key:`,
+				},
+			]);
+
+			return {missingKey: missingKeyAnswer[missingKey]}
+		});
+
+		console.log(`missingKeysAnswers`, missingKeysAnswers)
+	}
+
     async collectUserInfo() {
         
       // Implement this method to collect user information

@@ -14,4 +14,8 @@ export async function readJsonFile(filePath) {
         throw new Error(`Error reading JSON file: ${error.message}`);
     }
 }
+
+export async function getConfig() {
+    return await readJsonFile('./next-commander.json')
+}
   
